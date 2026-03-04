@@ -1,0 +1,529 @@
+// ============================================================
+// Instagram Analytics SaaS — Prisma Schema
+// Stack: Express.js + PostgreSQL + Better Auth
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// BETTER AUTH — required tables (do not rename)
+// ============================================================
+
+model User {
+  id            String    @id // Better Auth generates this
+  name          String?
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions      Session[]
+  accounts      Account[]
+
+  // App relations
+  watchedAccounts WatchedAccount[]
+  fetchJobs       FetchJob[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+
+  @@map("verification")
+}
+
+// ============================================================
+// GROUP 1 — ACCOUNTS
+// Replaces: Data_All_Accounts (profile info), Follower_History
+// ============================================================
+
+model WatchedAccount {
+  id                 String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId             String
+  user               User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  igUserId           String
+  username           String
+  fullName           String?
+  accountType        AccountType
+  isVerified         Boolean     @default(false)
+  profilePicUrl      String?
+  bio                String?
+
+  // Denormalized latest counts (updated on each fetch — fast reads)
+  followersCount     Int         @default(0)
+  followingCount     Int         @default(0)
+  postsCount         Int         @default(0)
+  followersFetchedAt DateTime?
+
+  isActive           Boolean     @default(true)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  // Relations
+  posts                   Post[]
+  followerHistory         FollowerHistory[]
+  accountMetricsSnapshots AccountMetricsSnapshot[]
+  aiAnalysisHistory       AiAnalysisHistory[]
+  aiEnglishAnalysisHistory AiEnglishAnalysisHistory[]
+  deepAnalysisResults     DeepAnalysisResult[]
+
+  @@unique([userId, igUserId])
+  @@index([userId, accountType])
+  @@map("watched_accounts")
+}
+
+enum AccountType {
+  main
+  competitor
+
+  @@map("account_type")
+}
+
+model FollowerHistory {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId      String         @db.Uuid
+  account        WatchedAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  followersCount Int
+  followingCount Int?           // NULL if profile scraper not called
+  recordedAt     DateTime       @default(now())
+
+  @@index([accountId, recordedAt(sort: Desc)])
+  @@map("follower_history")
+}
+
+// ============================================================
+// GROUP 2 — POSTS
+// Replaces: Historical_Posts (content columns)
+// ============================================================
+
+model Post {
+  id        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId String         @db.Uuid
+  account   WatchedAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  igPostId  String
+  shortCode String
+
+  postType    PostType
+  productType String?    // clips, feed, etc.
+
+  caption               String?
+  url                   String?
+  isPinned              Boolean @default(false)
+  isCommentsDisabled    Boolean @default(false)
+  isSponsored           Boolean @default(false)
+
+  // Media CDN URLs (may expire — permanent refs in MediaFile)
+  displayUrl  String?
+  videoUrl    String?
+  audioUrl    String?
+
+  videoDuration    Decimal?  @db.Decimal(8, 2)  // seconds
+  dimensionsHeight Int?
+  dimensionsWidth  Int?
+  altText          String?
+
+  locationName String?
+  locationId   String?
+
+  // Music / audio metadata
+  musicArtist       String?
+  musicSong         String?
+  musicAudioId      String?
+  usesOriginalAudio Boolean?
+
+  postedAt       DateTime
+  firstFetchedAt DateTime  @default(now())
+  lastUpdatedAt  DateTime  @updatedAt
+
+  // Relations
+  mediaFiles           MediaFile[]
+  metricsSnapshots     PostMetricsSnapshot[]
+  hashtags             PostHashtag[]
+  mentions             PostMention[]
+  aiAnalysisHistory    AiAnalysisHistory[]
+  aiEnglishAnalysisHistory AiEnglishAnalysisHistory[]
+
+  @@unique([accountId, igPostId])
+  @@index([accountId, postedAt(sort: Desc)])
+  @@index([accountId, postType])
+  @@index([postedAt(sort: Desc)])
+  @@map("posts")
+}
+
+enum PostType {
+  Video
+  Image
+  Sidecar
+
+  @@map("post_type")
+}
+
+// ── Hashtags (normalized) ─────────────────────────────────
+
+model Hashtag {
+  id        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tag       String        @unique  // lowercase, no # symbol
+  createdAt DateTime      @default(now())
+
+  posts     PostHashtag[]
+
+  @@map("hashtags")
+}
+
+model PostHashtag {
+  postId    String  @db.Uuid
+  post      Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  hashtagId String  @db.Uuid
+  hashtag   Hashtag @relation(fields: [hashtagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, hashtagId])
+  @@map("post_hashtags")
+}
+
+// ── Mentions ──────────────────────────────────────────────
+
+model PostMention {
+  postId   String @db.Uuid
+  post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  username String
+
+  @@id([postId, username])
+  @@map("post_mentions")
+}
+
+// ============================================================
+// GROUP 3 — MEDIA
+// Replaces: Drive Thumbnail ID / Drive Video ID columns
+// ============================================================
+
+model MediaFile {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  postId      String    @db.Uuid
+  post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  mediaType   MediaType
+  position    Int       @default(0)  // carousel ordering
+
+  storageKey  String?   // S3/Supabase path — use to build permanent URL
+  originalUrl String?   // Apify CDN URL (may expire — re-download fallback)
+  fileSizeMb  Decimal?  @db.Decimal(8, 2)
+  mimeType    String?
+
+  createdAt   DateTime  @default(now())
+
+  @@index([postId, mediaType])
+  @@map("media_files")
+}
+
+enum MediaType {
+  thumbnail
+  video
+  carousel_image
+
+  @@map("media_type")
+}
+
+// ============================================================
+// GROUP 4 — METRICS (time-series)
+// Replaces: in-place updates on Historical_Posts,
+//           Data_All_Accounts recalculations
+// ============================================================
+
+model PostMetricsSnapshot {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  postId         String   @db.Uuid
+  post           Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  likesCount     Int      @default(0)
+  commentsCount  Int      @default(0)
+  shareCount     Int      @default(0)
+  savedCount     Int      @default(0)
+  videoViewCount Int      @default(0)
+  videoPlayCount Int      @default(0)
+
+  // Stored as decimal: 0.0523 = 5.23%
+  // Formula: ((likes×2) + (comments×5)) / followers × 100  ÷ 100
+  engagementRate Decimal? @db.Decimal(10, 6)
+
+  fetchedAt      DateTime @default(now())
+
+  @@index([postId, fetchedAt(sort: Desc)])
+  @@index([fetchedAt(sort: Desc)])
+  @@map("post_metrics_snapshots")
+}
+
+model AccountMetricsSnapshot {
+  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId   String         @db.Uuid
+  account     WatchedAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  fetchJobId  String?        @db.Uuid
+  fetchJob    FetchJob?      @relation(fields: [fetchJobId], references: [id])
+
+  // ── Follower snapshot ────────────────────────────────────
+  followersCount     Int     @default(0)
+  followerGrowth     Int     @default(0)     // today - yesterday
+  followerGrowthPct  Decimal @default(0)     @db.Decimal(8, 4)
+  previousFollowers  Int     @default(0)
+
+  // ── Post counts ──────────────────────────────────────────
+  totalPostsScraped  Int     @default(0)
+  totalVideos        Int     @default(0)
+  totalImages        Int     @default(0)
+  totalSidecars      Int     @default(0)
+
+  // ── Posting frequencies ──────────────────────────────────
+  postingFreqPerDay    Decimal @default(0) @db.Decimal(6, 2)
+  postingFreqPerWeek   Decimal @default(0) @db.Decimal(6, 2)
+  videoFreqPerDay      Decimal @default(0) @db.Decimal(6, 2)
+  videoFreqPerWeek     Decimal @default(0) @db.Decimal(6, 2)
+  imageFreqPerDay      Decimal @default(0) @db.Decimal(6, 2)
+  imageFreqPerWeek     Decimal @default(0) @db.Decimal(6, 2)
+  sidecarFreqPerDay    Decimal @default(0) @db.Decimal(6, 2)
+  sidecarFreqPerWeek   Decimal @default(0) @db.Decimal(6, 2)
+
+  // ── Video totals ─────────────────────────────────────────
+  totalVideoViews    BigInt  @default(0)
+  totalVideoPlays    BigInt  @default(0)
+  totalLikesVideo    BigInt  @default(0)
+  totalCommentsVideo BigInt  @default(0)
+
+  // ── Image / Sidecar totals ───────────────────────────────
+  totalLikesImage      BigInt @default(0)
+  totalCommentsImage   BigInt @default(0)
+  totalLikesSidecar    BigInt @default(0)
+  totalCommentsSidecar BigInt @default(0)
+
+  // ── Averages ─────────────────────────────────────────────
+  avgViewsPerVideo      Decimal @default(0) @db.Decimal(12, 2)
+  avgPlaysPerVideo      Decimal @default(0) @db.Decimal(12, 2)
+  avgLikesPerVideo      Decimal @default(0) @db.Decimal(12, 2)
+  avgCommentsPerVideo   Decimal @default(0) @db.Decimal(12, 2)
+  avgLikesPerImage      Decimal @default(0) @db.Decimal(12, 2)
+  avgCommentsPerImage   Decimal @default(0) @db.Decimal(12, 2)
+  avgLikesPerSidecar    Decimal @default(0) @db.Decimal(12, 2)
+  avgCommentsPerSidecar Decimal @default(0) @db.Decimal(12, 2)
+
+  // ── Engagement rates (decimal: 0.0523 = 5.23%) ───────────
+  avgErVideo         Decimal @default(0) @db.Decimal(10, 6)
+  avgErImage         Decimal @default(0) @db.Decimal(10, 6)
+  avgErSidecar       Decimal @default(0) @db.Decimal(10, 6)
+  avgErImageSidecar  Decimal @default(0) @db.Decimal(10, 6)
+  avgErAllPosts      Decimal @default(0) @db.Decimal(10, 6)
+  avgErLast15Days    Decimal @default(0) @db.Decimal(10, 6)  // only posts in last 15 days
+
+  calculatedAt DateTime @default(now())
+
+  @@index([accountId, calculatedAt(sort: Desc)])
+  @@map("account_metrics_snapshots")
+}
+
+// ============================================================
+// GROUP 5 — AI & JOBS
+// Replaces: AI_Analysis_History, AI_Token_Usage,
+//           Scrape_History, Logs
+// ============================================================
+
+model AiAnalysisHistory {
+  id        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId String         @db.Uuid
+  account   WatchedAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  // NULL for deep/account-level analysis
+  postId    String?        @db.Uuid
+  post      Post?          @relation(fields: [postId], references: [id], onDelete: SetNull)
+
+  fetchJobId String?       @db.Uuid
+  fetchJob   FetchJob?     @relation(fields: [fetchJobId], references: [id])
+
+  analysisType  AnalysisType
+  status        AnalysisStatus @default(pending)
+
+  resultJson    Json?          // Full Gemini response — stored for reprocessing
+  summary       String?        // Human-readable extracted summary
+  errorMessage  String?
+
+  // Token usage — replaces AI_Token_Usage sheet
+  provider               String?  // gemini-1.5-pro, gemini-1.5-flash, etc.
+  estimatedInputTokens   Int?
+  estimatedOutputTokens  Int?
+  durationMs             Int?     // API call latency
+
+  createdAt DateTime @default(now())
+
+  @@index([accountId, analysisType, createdAt(sort: Desc)])
+  @@map("ai_analysis_history")
+}
+
+model AiEnglishAnalysisHistory {
+  id        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId String         @db.Uuid
+  account   WatchedAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  // NULL for deep/account-level analysis
+  postId    String?        @db.Uuid
+  post      Post?          @relation(fields: [postId], references: [id], onDelete: SetNull)
+
+  fetchJobId String?       @db.Uuid
+  fetchJob   FetchJob?     @relation(fields: [fetchJobId], references: [id])
+
+  analysisType  AnalysisType
+  status        AnalysisStatus @default(pending)
+
+  resultJson    Json?          // Full Gemini response — stored for reprocessing
+  summary       String?        // Human-readable extracted summary
+  errorMessage  String?
+
+  // Token usage — replaces AI_Token_Usage sheet
+  provider               String?  // gemini-1.5-pro, gemini-1.5-flash, etc.
+  estimatedInputTokens   Int?
+  estimatedOutputTokens  Int?
+  durationMs             Int?     // API call latency
+
+  createdAt DateTime @default(now())
+
+  @@index([accountId, analysisType, createdAt(sort: Desc)])
+  @@map("ai_english_analysis_history")
+}
+
+enum AnalysisType {
+  thumbnail
+  video
+  deep
+
+  @@map("analysis_type")
+}
+
+enum AnalysisStatus {
+  pending
+  running
+  completed
+  failed
+
+  @@map("analysis_status")
+}
+
+// ============================================================
+// DEEP ANALYSIS RESULTS
+// Three-phase comprehensive analysis: Phase 1, 2, 3
+// ============================================================
+
+model DeepAnalysisResult {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId      String         @db.Uuid
+  account        WatchedAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  competitorIds  String[]       @db.Uuid   // Array of competitor account UUIDs
+  status         AnalysisStatus @default(pending)
+
+  // Phase results — stored as JSON for flexibility
+  phase1Result   Json?          // Judgment + Comprehensiveness + Performance
+  phase2Result   Json?          // Appeal + Competitor Pattern + Script
+  phase3Result   Json?          // SWOT + Strategy + Summary + Benchmarks
+
+  // Raw input data for reference / reprocessing
+  rawData        Json?
+
+  // Error tracking
+  errorMessage   String?
+
+  createdAt      DateTime       @default(now())
+  completedAt    DateTime?
+
+  @@index([accountId, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+  @@map("deep_analysis_results")
+}
+
+model FetchJob {
+  id      String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  jobType  JobType
+  status   JobStatus @default(pending)
+
+  accountsFetched String[]  // array of usernames
+  postsCreated    Int       @default(0)
+  postsUpdated    Int       @default(0)
+  mediaDownloaded Int       @default(0)
+
+  apifyRunId     String?
+  apifyDatasetId String?
+  errorMessage   String?
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  // Relations
+  accountMetricsSnapshots AccountMetricsSnapshot[]
+  aiAnalysisHistory       AiAnalysisHistory[]
+  aiEnglishAnalysisHistory AiEnglishAnalysisHistory[]
+
+  @@index([userId, startedAt(sort: Desc)])
+  @@map("fetch_jobs")
+}
+
+enum JobType {
+  initial        // Day 1: 128 posts, all media, all AI
+  daily_update   // Daily: ~8 new posts, new media, new AI
+
+  @@map("job_type")
+}
+
+enum JobStatus {
+  pending
+  running
+  completed
+  failed
+
+  @@map("job_status")
+}
