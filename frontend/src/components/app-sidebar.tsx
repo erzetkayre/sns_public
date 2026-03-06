@@ -149,11 +149,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={{
+        {/* <NavUser user={{
             name: session.user.name,
             email: session.user.email,
             avatar: session.user.image ?? "/avatars/default.jpg",
-          }} />
+          }} /> */}
       </SidebarFooter>
     </Sidebar>
   )

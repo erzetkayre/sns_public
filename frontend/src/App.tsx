@@ -1,9 +1,9 @@
-import LandingPage from './pages/Landing'
+// import LandingPage from './pages/Landing'
 import './App.css'
 import { Routes, Route } from "react-router-dom"
 // import Page from './app/dashboard/page'
-import LoginPage from './pages/Login'
-import SignupPage from './pages/Register'
+// import LoginPage from './pages/Login'
+// import SignupPage from './pages/Register'
 import DashboardPage from './pages/Dashboard'
 
 function App() {
