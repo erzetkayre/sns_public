@@ -19,8 +19,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { useSession } from '@/lib/auth-client'
-import { useNavigate } from 'react-router-dom'
+// import { useSession } from '@/lib/auth-client'
+// import { useNavigate } from 'react-router-dom'
 
 // const data = {
 //   // navClouds: [
@@ -116,15 +116,15 @@ const navMain = [
 ]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { data: session, isPending } = useSession()
-  const navigate = useNavigate()
+  // const { data: session, isPending } = useSession()
+  // const navigate = useNavigate()
 
-  if (isPending) return null
+  // if (isPending) return null
 
-  if (!session?.user) {
-    navigate("/login")
-    return null
-  }
+  // if (!session?.user) {
+  //   navigate("/login")
+  //   return null
+  // }
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>

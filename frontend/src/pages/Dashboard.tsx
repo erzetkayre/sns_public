@@ -1,5 +1,5 @@
-import { useSession } from '@/lib/auth-client'
-import { useNavigate } from 'react-router-dom'
+// import { useSession } from '@/lib/auth-client'
+// import { useNavigate } from 'react-router-dom'
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import {
@@ -11,19 +11,19 @@ import {
 import InstagramDashboardContent from "@/components/instagram-dashboard-content-v2"
 
 export default function DashboardPage() {
-  const { data: session, isPending } = useSession()
-  const navigate = useNavigate()
+  // const { data: session, isPending } = useSession()
+  // const navigate = useNavigate()
 
-  if (isPending) return (
-    <div className="min-h-screen flex items-center justify-center">
-      Loading...
-    </div>
-  )
+  // if (isPending) return (
+  //   <div className="min-h-screen flex items-center justify-center">
+  //     Loading...
+  //   </div>
+  // )
 
-  if (!session) {
-    navigate('/login')
-    return null
-  }
+  // if (!session) {
+  //   navigate('/login')
+  //   return null
+  // }
 
   return (
     <SidebarProvider
