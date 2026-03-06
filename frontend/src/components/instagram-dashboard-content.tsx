@@ -1554,10 +1554,15 @@ export default function InstagramDashboardContent() {
   const [loadingAnalysis, setLoadingAnalysis] = useState(false)
   const [fetchingJob,     setFetchingJob]     = useState(false)
   const [analyzingJob,    setAnalyzingJob]    = useState(false)
+  const [competitorPosts] = useState<Record<string, Post[]>>({})
 
   const selectedAccount = allAccounts.find(a => a.id === selectedId)
+  const mainAccounts    = allAccounts.filter(a => a.accountType === "main")
   const competitors     = allAccounts.filter(a => a.accountType === "competitor")
-
+  // Build CompetitorMetrics for section 2
+  const competitorMetrics: CompetitorMetrics[] = competitors.map(acc => (
+    computeCompetitorMetrics(acc, competitorPosts[acc.id] ?? [])
+  ))
   // Re-compute KPI setiap kali posts/account berubah
   useEffect(() => {
     if (selectedAccount && posts.length > 0) {
@@ -1566,6 +1571,11 @@ export default function InstagramDashboardContent() {
       setKpi(undefined)
     }
   }, [posts, selectedAccount])
+
+  const allPostsByAccount = allAccounts.map(acc => ({
+    account: acc,
+    posts:   acc.id === selectedId ? posts : (competitorPosts[acc.id] ?? []),
+  }))
 
   const pollJob = useCallback((jobId: string) => {
     const tick = async () => {
@@ -1612,6 +1622,21 @@ export default function InstagramDashboardContent() {
     finally { setLoadingPosts(false); setLoadingAnalysis(false) }
   }, [])
 
+  // ── Load competitor posts (lightweight, for metrics only) ─────────────────
+  const loadCompetitorPosts = useCallback(async (accounts: Account[]) => {
+    const comps = accounts.filter(a => a.accountType === "competitor")
+    const results = await Promise.allSettled(
+      comps.map(acc => api.getAccountPosts(acc.id, 50).then(r => ({ id: acc.id, data: r })))
+    )
+    const map: Record<string, Post[]> = {}
+    results.forEach(r => {
+      if (r.status === "fulfilled" && r.value.data.success) {
+        map[r.value.id] = (r.value.data.posts ?? []).map(normalizePost)
+      }
+    })
+    setCompetitorPosts(map)
+  }, [])
+
   const loadAll = useCallback(async () => {
     setLoadingAccounts(true)
     try {
@@ -1636,10 +1661,6 @@ export default function InstagramDashboardContent() {
       if (r.success && r.jobId) { setActiveJob({ id: r.jobId, status: "running" }); pollJob(r.jobId) }
     } catch (e) { console.error(e) } finally { setFetchingJob(false) }
   }
-  const [competitorPosts] = useState<Record<string, Post[]>>({})
-  const competitorMetrics: CompetitorMetrics[] = competitors.map(acc => (
-    computeCompetitorMetrics(acc, competitorPosts[acc.id] ?? [])
-  ))
   const handleAIAnalyze = async () => {
     if (analyzingJob) return; setAnalyzingJob(true)
     try {
@@ -1647,11 +1668,7 @@ export default function InstagramDashboardContent() {
       if (r.success && r.jobId) { setActiveJob({ id: r.jobId, status: "running" }); pollJob(r.jobId) }
     } catch (e) { console.error(e) } finally { setAnalyzingJob(false) }
   }
-  // All posts by account for section 3
-    const allPostsByAccount = allAccounts.map(acc => ({
-      account: acc,
-      posts:   acc.id === selectedId ? posts : (competitorPosts[acc.id] ?? []),
-    }))
+
   const lastUpdated = selectedAccount?.followerHistory?.[0]?.recordedAt
     ? new Date(selectedAccount.followerHistory[0].recordedAt).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })
     : "—"

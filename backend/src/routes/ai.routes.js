@@ -281,6 +281,7 @@ router.get('/account/:accountId/analysis', async (req, res) => {
     const offset    = parseInt(req.query.offset) || 0;
 
     const analyses = await prisma.aiAnalysisHistory.findMany({
+    // const analyses = await prisma.aiEnglishAnalysisHistory.findMany({
       where: {
         accountId,
         status: 'completed',          // hanya yang berhasil

@@ -7,7 +7,8 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 
-import InstagramDashboardContent from "@/components/instagram-dashboard-content"
+// import InstagramDashboardContent from "@/components/instagram-dashboard-content"
+import InstagramDashboardContent from "@/components/instagram-dashboard-content-v2"
 
 export default function DashboardPage() {
   const { data: session, isPending } = useSession()

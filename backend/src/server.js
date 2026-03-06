@@ -44,3 +44,6 @@ app.use('/api/report', reportRoutes)
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
+
+import aiRoutesV2 from './routes/ai.routes.v2.js';
+app.use('/api/ai/v2', aiRoutesV2);

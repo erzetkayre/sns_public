@@ -155,6 +155,7 @@ async function callGeminiWithFile(file, prompt) {
       temperature: 0.3,
       maxOutputTokens: 14000,
       responseMimeType: 'application/json',
+      responseSchema:   ANALYSIS_SCHEMA,
       systemInstruction:
         'You are an expert Instagram video analyst for 100K+ follower accounts. ' +
         'Always respond in pure JSON format only. ' +
@@ -455,4 +456,228 @@ export function resetTokenUsageStats() {
     totalTokens: 0,
   };
   console.log('[AI] Token usage stats reset');
+}
+
+const ANALYSIS_SCHEMA = {
+  type: "object",
+  properties: {
+
+    minuteByMinuteBreakdown: {
+      type: "object",
+      properties: {
+        totalDuration: { type: "number" },
+        segmentCount: { type: "number" },
+
+        segments: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              timeRange: { type: "string" },
+              visual: { type: "string" },
+              camera: { type: "string" },
+              transition: { type: "string" },
+              text: { type: "string" },
+              audio: { type: "string" },
+              emotion: { type: "string" }
+            },
+            required: ["timeRange","visual","camera","transition","text","audio","emotion"]
+          }
+        },
+
+        narrativeFlow: { type: "string" },
+        pacing: { type: "string" },
+        score: { type: "number" },
+        analysis: { type: "string" }
+
+      },
+      required: ["totalDuration","segmentCount","segments","narrativeFlow","pacing","score","analysis"]
+    },
+
+    hookAnalysisDetailed: {
+      type: "object",
+      properties: {
+
+        hookType: { type: "string" },
+        scrollStoppingPower: { type: "string" },
+        visualImpactScore: { type: "number" },
+
+        psychologicalTriggers: {
+          type: "object",
+          properties: {
+            curiosity: { type: "boolean" },
+            surprise: { type: "boolean" },
+            emotion: { type: "boolean" },
+            visualBeauty: { type: "boolean" }
+          },
+          required:["curiosity","surprise","emotion","visualBeauty"]
+        },
+
+        overallHookScore: { type: "number" },
+        analysis: { type: "string" }
+
+      },
+      required:["hookType","scrollStoppingPower","visualImpactScore","psychologicalTriggers","overallHookScore","analysis"]
+    },
+
+    videoStructureAnalysis: {
+      type:"object",
+      properties:{
+        introduction:{ type:"string" },
+        risingAction:{ type:"string" },
+        climax:{ type:"string" },
+        conclusion:{ type:"string" },
+        structureScore:{ type:"number" },
+        analysis:{ type:"string" }
+      },
+      required:["introduction","risingAction","climax","conclusion","structureScore","analysis"]
+    },
+
+    themeIdentification:{
+      type:"object",
+      properties:{
+        primaryTheme:{ type:"string" },
+        secondaryThemes:{ type:"array", items:{ type:"string" }},
+        targetAudience:{ type:"string" },
+        tone:{ type:"string" },
+        uniquenessScore:{ type:"number" },
+        analysis:{ type:"string" }
+      },
+      required:["primaryTheme","secondaryThemes","targetAudience","tone","uniquenessScore","analysis"]
+    },
+
+    visualExpressionTechniques:{
+      type:"object",
+      properties:{
+        colorStyle:{ type:"string" },
+        composition:{ type:"string" },
+        motionDynamics:{ type:"string" },
+        visualConsistency:{ type:"string" },
+        visualScore:{ type:"number" },
+        analysis:{ type:"string" }
+      },
+      required:["colorStyle","composition","motionDynamics","visualConsistency","visualScore","analysis"]
+    },
+
+    specificEditingTechniques:{
+      type:"object",
+      properties:{
+        cutFrequency:{ type:"string" },
+        editingStyle:{ type:"string" },
+        beatSyncEditing:{ type:"boolean" },
+        slowMotionUsed:{ type:"boolean" },
+        editingScore:{ type:"number" },
+        analysis:{ type:"string" }
+      },
+      required:["cutFrequency","editingStyle","beatSyncEditing","slowMotionUsed","editingScore","analysis"]
+    },
+
+    soundDesignAnalysis:{
+      type:"object",
+      properties:{
+        bgmGenre:{ type:"string" },
+        bgmTempo:{ type:"string" },
+        sfxUsage:{ type:"string" },
+        audioBalance:{ type:"string" },
+        soundScore:{ type:"number" },
+        analysis:{ type:"string" }
+      },
+      required:["bgmGenre","bgmTempo","sfxUsage","audioBalance","soundScore","analysis"]
+    },
+
+    pacingRhythm:{
+      type:"object",
+      properties:{
+        overallPace:{ type:"string" },
+        rhythmScore:{ type:"number" },
+        energyCurve:{ type:"string" },
+        analysis:{ type:"string" }
+      },
+      required:["overallPace","rhythmScore","energyCurve","analysis"]
+    },
+
+    retentionPrediction:{
+      type:"object",
+      properties:{
+        predicted3SecRetention:{ type:"number" },
+        predicted50PctRetention:{ type:"number" },
+        predicted100PctRetention:{ type:"number" },
+        dropOffRisk:{ type:"string" },
+        retentionScore:{ type:"number" },
+        analysis:{ type:"string" }
+      },
+      required:["predicted3SecRetention","predicted50PctRetention","predicted100PctRetention","dropOffRisk","retentionScore","analysis"]
+    },
+
+    competitiveGapAnalysis:{
+      type:"object",
+      properties:{
+        overallCompetitiveLevel:{ type:"string" },
+        keyStrengths:{ type:"array", items:{ type:"string" }},
+        criticalGaps:{ type:"array", items:{ type:"string" }},
+        differentiatorScore:{ type:"number" },
+        analysis:{ type:"string" }
+      },
+      required:["overallCompetitiveLevel","keyStrengths","criticalGaps","differentiatorScore","analysis"]
+    },
+
+    erCorrelationAnalysis:{
+      type:"object",
+      properties:{
+        currentER:{ type:"number" },
+        benchmarkER:{ type:"number" },
+        erPerformance:{ type:"string" },
+        erDrivers:{ type:"array", items:{ type:"string" }},
+        erDetractors:{ type:"array", items:{ type:"string" }},
+        analysis:{ type:"string" }
+      },
+      required:["currentER","benchmarkER","erPerformance","erDrivers","erDetractors","analysis"]
+    },
+
+    overallAssessment:{
+      type:"object",
+      properties:{
+        overallScore:{ type:"number" },
+        viralPotentialScore:{ type:"number" },
+        grade:{ type:"string" },
+        topStrengths:{ type:"array", items:{ type:"string" }},
+        criticalWeaknesses:{ type:"array", items:{ type:"string" }},
+        analysis:{ type:"string" }
+      },
+      required:["overallScore","viralPotentialScore","grade","topStrengths","criticalWeaknesses","analysis"]
+    },
+
+    top3ActionableRecommendations:{
+      type:"array",
+      items:{
+        type:"object",
+        properties:{
+          priority:{ type:"string" },
+          recommendation:{ type:"string" },
+          expectedResult:{ type:"string" }
+        },
+        required:["priority","recommendation","expectedResult"]
+      }
+    },
+
+    summary:{ type:"string" }
+
+  },
+
+  required:[
+    "minuteByMinuteBreakdown",
+    "hookAnalysisDetailed",
+    "videoStructureAnalysis",
+    "themeIdentification",
+    "visualExpressionTechniques",
+    "specificEditingTechniques",
+    "soundDesignAnalysis",
+    "pacingRhythm",
+    "retentionPrediction",
+    "competitiveGapAnalysis",
+    "erCorrelationAnalysis",
+    "overallAssessment",
+    "top3ActionableRecommendations",
+    "summary"
+  ]
 }
