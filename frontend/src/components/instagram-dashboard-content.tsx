@@ -20,7 +20,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import {
-  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+  BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   RadarChart, Radar, PolarGrid, PolarAngleAxis,
 } from "recharts"
@@ -389,7 +389,7 @@ const fmt = {
   },
 }
 
-const COLORS = ["#6366f1", "#f43f5e", "#10b981", "#f59e0b", "#3b82f6", "#8b5cf6"]
+// const COLORS = ["#6366f1", "#f43f5e", "#10b981", "#f59e0b", "#3b82f6", "#8b5cf6"]
 
 // ── Micro Components ──────────────────────────────────────────────────────────
 
@@ -567,14 +567,14 @@ function ContentDistribution({ kpi, loading }: { kpi?: ComputedKPI; loading: boo
 }
 
 // ── Engagement Chart ──────────────────────────────────────────────────────────
-type MetricKey = "views" | "likes" | "comments" | "er"
+// type MetricKey = "views" | "likes" | "comments" | "er"
 
-const METRIC_CONFIG: Record<MetricKey, { label: string; color: string; axis: "l" | "r"; dash?: string }> = {
-  views:    { label: "Views",    color: "#6366f1", axis: "l" },
-  likes:    { label: "Likes",    color: "#f43f5e", axis: "l" },
-  comments: { label: "Comments", color: "#10b981", axis: "l" },
-  er:       { label: "ER (%)",   color: "#f59e0b", axis: "r", dash: "4 2" },
-}
+// const METRIC_CONFIG: Record<MetricKey, { label: string; color: string; axis: "l" | "r"; dash?: string }> = {
+//   views:    { label: "Views",    color: "#6366f1", axis: "l" },
+//   likes:    { label: "Likes",    color: "#f43f5e", axis: "l" },
+//   comments: { label: "Comments", color: "#10b981", axis: "l" },
+//   er:       { label: "ER (%)",   color: "#f59e0b", axis: "r", dash: "4 2" },
+// }
 
 // function EngagementChart({ posts, followersCount, loading }: {
 //   posts: Post[]; followersCount: number; loading: boolean
@@ -598,175 +598,175 @@ const METRIC_CONFIG: Record<MetricKey, { label: string; color: string; axis: "l"
 //     })
 //   }
 
-  const data = [...posts]
-    .filter(p => p.postedAt && p.metrics)
-    .sort((a, b) => new Date(a.postedAt).getTime() - new Date(b.postedAt).getTime())
-    .slice(-range)
-    .map(p => {
-      const l = p.metrics!.likes    ?? 0
-      const c = p.metrics!.comments ?? 0
-      const er = p.metrics!.er != null
-        ? p.metrics!.er
-        : (followersCount > 0 ? parseFloat(((l*2+c*5)/followersCount*100).toFixed(2)) : 0)
-      return { date: fmt.dateShort(p.postedAt), views: p.metrics!.views ?? 0, likes: l, comments: c, er }
-    })
+//   const data = [...posts]
+//     .filter(p => p.postedAt && p.metrics)
+//     .sort((a, b) => new Date(a.postedAt).getTime() - new Date(b.postedAt).getTime())
+//     .slice(-range)
+//     .map(p => {
+//       const l = p.metrics!.likes    ?? 0
+//       const c = p.metrics!.comments ?? 0
+//       const er = p.metrics!.er != null
+//         ? p.metrics!.er
+//         : (followersCount > 0 ? parseFloat(((l*2+c*5)/followersCount*100).toFixed(2)) : 0)
+//       return { date: fmt.dateShort(p.postedAt), views: p.metrics!.views ?? 0, likes: l, comments: c, er }
+//     })
 
-  // Apakah ada metric axis-r yang aktif?
-  const hasRAxis = activeMetrics.has("er")
-  // Apakah ada metric axis-l yang aktif?
-  const hasLAxis = (["views", "likes", "comments"] as MetricKey[]).some(k => activeMetrics.has(k))
+//   // Apakah ada metric axis-r yang aktif?
+//   const hasRAxis = activeMetrics.has("er")
+//   // Apakah ada metric axis-l yang aktif?
+//   const hasLAxis = (["views", "likes", "comments"] as MetricKey[]).some(k => activeMetrics.has(k))
 
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div>
-            <CardTitle>Engagement Over Time</CardTitle>
-            <CardDescription>Per-post trend</CardDescription>
-          </div>
-          {/* Range selector */}
-          <div className="flex items-center gap-1 shrink-0">
-            {([10, 20, 50] as const).map(n => (
-              <button
-                key={n}
-                onClick={() => setRange(n)}
-                className={`text-[11px] px-2.5 py-1 rounded-md border transition-colors ${
-                  range === n
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "text-muted-foreground hover:bg-muted/60"
-                }`}
-              >
-                {n} posts
-              </button>
-            ))}
-          </div>
-        </div>
+//   return (
+//     <Card>
+//       <CardHeader className="pb-3">
+//         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+//           <div>
+//             <CardTitle>Engagement Over Time</CardTitle>
+//             <CardDescription>Per-post trend</CardDescription>
+//           </div>
+//           {/* Range selector */}
+//           <div className="flex items-center gap-1 shrink-0">
+//             {([10, 20, 50] as const).map(n => (
+//               <button
+//                 key={n}
+//                 onClick={() => setRange(n)}
+//                 className={`text-[11px] px-2.5 py-1 rounded-md border transition-colors ${
+//                   range === n
+//                     ? "bg-primary text-primary-foreground border-primary"
+//                     : "text-muted-foreground hover:bg-muted/60"
+//                 }`}
+//               >
+//                 {n} posts
+//               </button>
+//             ))}
+//           </div>
+//         </div>
 
-        {/* Metric toggle pills */}
-        <div className="flex flex-wrap gap-2 pt-1">
-          {(Object.entries(METRIC_CONFIG) as [MetricKey, typeof METRIC_CONFIG[MetricKey]][]).map(([key, cfg]) => {
-            const active = activeMetrics.has(key)
-            return (
-              <button
-                key={key}
-                onClick={() => toggleMetric(key)}
-                className={`inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full border transition-all ${
-                  active
-                    ? "border-transparent text-white font-medium shadow-sm"
-                    : "bg-transparent text-muted-foreground border-border opacity-50 hover:opacity-75"
-                }`}
-                style={active ? { background: cfg.color } : {}}
-              >
-                <span
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{ background: active ? "rgba(255,255,255,0.8)" : cfg.color }}
-                />
-                {cfg.label}
-              </button>
-            )
-          })}
-        </div>
-      </CardHeader>
+//         {/* Metric toggle pills */}
+//         <div className="flex flex-wrap gap-2 pt-1">
+//           {(Object.entries(METRIC_CONFIG) as [MetricKey, typeof METRIC_CONFIG[MetricKey]][]).map(([key, cfg]) => {
+//             const active = activeMetrics.has(key)
+//             return (
+//               <button
+//                 key={key}
+//                 onClick={() => toggleMetric(key)}
+//                 className={`inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full border transition-all ${
+//                   active
+//                     ? "border-transparent text-white font-medium shadow-sm"
+//                     : "bg-transparent text-muted-foreground border-border opacity-50 hover:opacity-75"
+//                 }`}
+//                 style={active ? { background: cfg.color } : {}}
+//               >
+//                 <span
+//                   className="h-1.5 w-1.5 rounded-full"
+//                   style={{ background: active ? "rgba(255,255,255,0.8)" : cfg.color }}
+//                 />
+//                 {cfg.label}
+//               </button>
+//             )
+//           })}
+//         </div>
+//       </CardHeader>
 
-      <CardContent className="pt-0">
-        {loading ? (
-          <Skeleton className="h-56 rounded-lg" />
-        ) : !data.length ? (
-          <div className="h-56 flex items-center justify-center text-xs text-muted-foreground">No data yet</div>
-        ) : (
-          <ResponsiveContainer width="100%" height={230}>
-            <LineChart data={data} margin={{ top: 4, right: hasRAxis ? 8 : 4, bottom: 0, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-              {hasLAxis && (
-                <YAxis yAxisId="l" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={v => fmt.num(v)} />
-              )}
-              {hasRAxis && (
-                <YAxis yAxisId="r" orientation="right" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={v => `${v}%`} />
-              )}
-              <Tooltip
-                formatter={(v: number, n: string) => [
-                  n === "ER (%)" ? `${Number(v).toFixed(2)}%` : fmt.num(v), n
-                ]}
-                contentStyle={{ borderRadius: 8, fontSize: 12 }}
-              />
-              {(Object.entries(METRIC_CONFIG) as [MetricKey, typeof METRIC_CONFIG[MetricKey]][]).map(([key, cfg]) =>
-                activeMetrics.has(key) ? (
-                  <Line
-                    key={key}
-                    yAxisId={cfg.axis}
-                    type="monotone"
-                    dataKey={key}
-                    stroke={cfg.color}
-                    strokeWidth={2}
-                    dot={false}
-                    name={cfg.label}
-                    strokeDasharray={cfg.dash}
-                    animationDuration={400}
-                  />
-                ) : null
-              )}
-            </LineChart>
-          </ResponsiveContainer>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
+//       <CardContent className="pt-0">
+//         {loading ? (
+//           <Skeleton className="h-56 rounded-lg" />
+//         ) : !data.length ? (
+//           <div className="h-56 flex items-center justify-center text-xs text-muted-foreground">No data yet</div>
+//         ) : (
+//           <ResponsiveContainer width="100%" height={230}>
+//             <LineChart data={data} margin={{ top: 4, right: hasRAxis ? 8 : 4, bottom: 0, left: 0 }}>
+//               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+//               <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+//               {hasLAxis && (
+//                 <YAxis yAxisId="l" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={v => fmt.num(v)} />
+//               )}
+//               {hasRAxis && (
+//                 <YAxis yAxisId="r" orientation="right" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={v => `${v}%`} />
+//               )}
+//               <Tooltip
+//                 formatter={(v: number, n: string) => [
+//                   n === "ER (%)" ? `${Number(v).toFixed(2)}%` : fmt.num(v), n
+//                 ]}
+//                 contentStyle={{ borderRadius: 8, fontSize: 12 }}
+//               />
+//               {(Object.entries(METRIC_CONFIG) as [MetricKey, typeof METRIC_CONFIG[MetricKey]][]).map(([key, cfg]) =>
+//                 activeMetrics.has(key) ? (
+//                   <Line
+//                     key={key}
+//                     yAxisId={cfg.axis}
+//                     type="monotone"
+//                     dataKey={key}
+//                     stroke={cfg.color}
+//                     strokeWidth={2}
+//                     dot={false}
+//                     name={cfg.label}
+//                     strokeDasharray={cfg.dash}
+//                     animationDuration={400}
+//                   />
+//                 ) : null
+//               )}
+//             </LineChart>
+//           </ResponsiveContainer>
+//         )}
+//       </CardContent>
+//     </Card>
+//   )
+// }
 
 // ── Competitor Table ──────────────────────────────────────────────────────────
 
-function CompetitorTables({ competitors, loading }: { competitors: Account[]; loading: boolean }) {
-  return (
-    <Card>
-      <CardHeader><CardTitle>Competitor Accounts</CardTitle><CardDescription>Tracked competitor profiles</CardDescription></CardHeader>
-      <CardContent className="p-0">
-        {loading ? (
-          <div className="p-5 space-y-3">{Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-10 rounded-lg" />)}</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b bg-muted/40">
-                  <th className="text-left  text-xs font-medium text-muted-foreground px-5 py-2.5">Account</th>
-                  <th className="text-right text-xs font-medium text-muted-foreground px-3 py-2.5">Followers</th>
-                  <th className="text-right text-xs font-medium text-muted-foreground px-3 py-2.5">Posts</th>
-                  <th className="text-right text-xs font-medium text-muted-foreground px-5 py-2.5">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {!competitors.length ? (
-                  <tr><td colSpan={4} className="text-center py-8 text-xs text-muted-foreground">No competitor data</td></tr>
-                ) : competitors.map(acc => (
-                  <tr key={acc.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="h-7 w-7 rounded-full bg-gradient-to-br from-pink-400 to-violet-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                          {acc.username?.[0]?.toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium">@{acc.username}</p>
-                          <p className="text-xs text-muted-foreground">{acc.fullName || "—"}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-3 py-3 text-right text-xs font-medium">{fmt.num(acc.followersCount)}</td>
-                    <td className="px-3 py-3 text-right text-xs">{acc.postCount ?? "—"}</td>
-                    <td className="px-5 py-3 text-right">
-                      <Badge variant={acc.isVerified ? "default" : "outline"} className="text-[10px]">
-                        {acc.isVerified ? "✓ Verified" : "Active"}
-                      </Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
+// function CompetitorTables({ competitors, loading }: { competitors: Account[]; loading: boolean }) {
+//   return (
+//     <Card>
+//       <CardHeader><CardTitle>Competitor Accounts</CardTitle><CardDescription>Tracked competitor profiles</CardDescription></CardHeader>
+//       <CardContent className="p-0">
+//         {loading ? (
+//           <div className="p-5 space-y-3">{Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-10 rounded-lg" />)}</div>
+//         ) : (
+//           <div className="overflow-x-auto">
+//             <table className="w-full">
+//               <thead>
+//                 <tr className="border-b bg-muted/40">
+//                   <th className="text-left  text-xs font-medium text-muted-foreground px-5 py-2.5">Account</th>
+//                   <th className="text-right text-xs font-medium text-muted-foreground px-3 py-2.5">Followers</th>
+//                   <th className="text-right text-xs font-medium text-muted-foreground px-3 py-2.5">Posts</th>
+//                   <th className="text-right text-xs font-medium text-muted-foreground px-5 py-2.5">Status</th>
+//                 </tr>
+//               </thead>
+//               <tbody>
+//                 {!competitors.length ? (
+//                   <tr><td colSpan={4} className="text-center py-8 text-xs text-muted-foreground">No competitor data</td></tr>
+//                 ) : competitors.map(acc => (
+//                   <tr key={acc.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+//                     <td className="px-5 py-3">
+//                       <div className="flex items-center gap-2">
+//                         <div className="h-7 w-7 rounded-full bg-gradient-to-br from-pink-400 to-violet-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+//                           {acc.username?.[0]?.toUpperCase()}
+//                         </div>
+//                         <div>
+//                           <p className="text-xs font-medium">@{acc.username}</p>
+//                           <p className="text-xs text-muted-foreground">{acc.fullName || "—"}</p>
+//                         </div>
+//                       </div>
+//                     </td>
+//                     <td className="px-3 py-3 text-right text-xs font-medium">{fmt.num(acc.followersCount)}</td>
+//                     <td className="px-3 py-3 text-right text-xs">{acc.postCount ?? "—"}</td>
+//                     <td className="px-5 py-3 text-right">
+//                       <Badge variant={acc.isVerified ? "default" : "outline"} className="text-[10px]">
+//                         {acc.isVerified ? "✓ Verified" : "Active"}
+//                       </Badge>
+//                     </td>
+//                   </tr>
+//                 ))}
+//               </tbody>
+//             </table>
+//           </div>
+//         )}
+//       </CardContent>
+//     </Card>
+//   )
+// }
 
 // ── Competitor Chart ──────────────────────────────────────────────────────────
 
@@ -1550,8 +1550,8 @@ export default function InstagramDashboardContent() {
   const [loadingAccounts, setLoadingAccounts] = useState(false)
   const [loadingPosts,    setLoadingPosts]    = useState(false)
   const [loadingAnalysis, setLoadingAnalysis] = useState(false)
-  const [fetchingJob,     setFetchingJob]     = useState(false)
-  const [analyzingJob,    setAnalyzingJob]    = useState(false)
+  // const [fetchingJob,     setFetchingJob]     = useState(false)
+  // const [analyzingJob,    setAnalyzingJob]    = useState(false)
   const [competitorPosts] = useState<Record<string, Post[]>>({})
 
   const selectedAccount = allAccounts.find(a => a.id === selectedId)
@@ -1575,17 +1575,17 @@ export default function InstagramDashboardContent() {
     posts:   acc.id === selectedId ? posts : (competitorPosts[acc.id] ?? []),
   }))
 
-  const pollJob = useCallback((jobId: string) => {
-    const tick = async () => {
-      try {
-        const job: Job = await api.getJobStatus(jobId)
-        setActiveJob(job)
-        if (job.status === "running" || job.status === "pending") setTimeout(tick, 3000)
-        else loadAll()
-      } catch (e) { console.error(e) }
-    }
-    tick()
-  }, [])
+  // const pollJob = useCallback((jobId: string) => {
+  //   const tick = async () => {
+  //     try {
+  //       const job: Job = await api.getJobStatus(jobId)
+  //       setActiveJob(job)
+  //       if (job.status === "running" || job.status === "pending") setTimeout(tick, 3000)
+  //       else loadAll()
+  //     } catch (e) { console.error(e) }
+  //   }
+  //   tick()
+  // }, [])
 
   const loadAccountData = useCallback(async (id: string) => {
     setLoadingPosts(true); setLoadingAnalysis(true)
