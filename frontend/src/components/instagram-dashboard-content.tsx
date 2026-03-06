@@ -25,15 +25,14 @@ import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis,
 } from "recharts"
 import {
-  RefreshCw, TrendingUp, TrendingDown, Users, Heart,
-  Eye, Video, Zap, Award, Calendar, Brain, X,
+  RefreshCw, TrendingUp, Users, Heart,
+  Eye, Video, Zap, Award, Calendar, X,
   Search, Clock, Image as ImageIcon, Sparkles,
   CheckCircle, ArrowRight, ChevronDown, ChevronUp,
   Music, Film, Camera, Layers, Target, AlertTriangle,
 } from "lucide-react"
 import { SectionHeader } from "@/components/instagram/shared/ui-primitives"
 
-import { Button }   from "@/components/ui/button"
 import { Badge }    from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -45,12 +44,11 @@ import { TopPostsEmbed }     from "@/components/instagram/section1/TopPostsEmbed
 // import { AIAnalysis }        from "@/components/instagram/section1/AIAnalysis"
 import { ERTrendChart, PerformanceChart } from "@/components/instagram/section1/EngagementCharts"
 import type {
-  Account, Post, RawPost, AnalysisResult, ComputedKPI,
-  Job, CompetitorMetrics,
+  CompetitorMetrics,
 } from "@/components/instagram/shared/types"
 import {
   normalizePost, normalizeAccount, computeKPI,
-  computeCompetitorMetrics, toNum,
+  computeCompetitorMetrics
 } from "@/components/instagram/shared/utils"
 // ── Section 2
 import {
@@ -277,95 +275,95 @@ interface Job {
 // ── API Response Normalizer ───────────────────────────────────────────────────
 // Handles semua variasi field naming dari Prisma/Express
 
-function normalizePosts(raw: RawPost): Post {
-  // 1. type: postType (Prisma) atau type (pre-normalized)
-  const type = raw.type ?? raw.postType ?? "Video"
+// function normalizePosts(raw: RawPost): Post {
+//   // 1. type: postType (Prisma) atau type (pre-normalized)
+//   const type = raw.type ?? raw.postType ?? "Video"
 
-  // 2. hashtags: bisa array string langsung, atau join table
-  let hashtags: string[] = []
-  if (Array.isArray(raw.hashtags)) {
-    hashtags = raw.hashtags
-  } else if (Array.isArray(raw.postHashtags)) {
-    hashtags = raw.postHashtags.map(ph => ph.hashtag?.tag).filter(Boolean)
-  }
+//   // 2. hashtags: bisa array string langsung, atau join table
+//   let hashtags: string[] = []
+//   if (Array.isArray(raw.hashtags)) {
+//     hashtags = raw.hashtags
+//   } else if (Array.isArray(raw.postHashtags)) {
+//     hashtags = raw.postHashtags.map(ph => ph.hashtag?.tag).filter(Boolean)
+//   }
 
-  // 3. metrics: bisa pre-normalized atau dari metricsSnapshots[0]
-  let metrics: Post["metrics"] | undefined
-  if (raw.metrics) {
-    metrics = raw.metrics
-  } else if (raw.metricsSnapshots?.length) {
-    const snap = raw.metricsSnapshots[0]
-    const likes    = snap.likesCount     ?? 0
-    const comments = snap.commentsCount  ?? 0
-    const views    = snap.videoViewCount ?? 0
-    // engagementRate di schema: Decimal 0.0523 = 5.23%
-    // Kalikan 100 untuk tampilkan sebagai %
-    const er = snap.engagementRate != null
-      ? parseFloat(String(snap.engagementRate)) * 100
-      : undefined
-    metrics = { views, likes, comments, er }
-  }
+//   // 3. metrics: bisa pre-normalized atau dari metricsSnapshots[0]
+//   let metrics: Post["metrics"] | undefined
+//   if (raw.metrics) {
+//     metrics = raw.metrics
+//   } else if (raw.metricsSnapshots?.length) {
+//     const snap = raw.metricsSnapshots[0]
+//     const likes    = snap.likesCount     ?? 0
+//     const comments = snap.commentsCount  ?? 0
+//     const views    = snap.videoViewCount ?? 0
+//     // engagementRate di schema: Decimal 0.0523 = 5.23%
+//     // Kalikan 100 untuk tampilkan sebagai %
+//     const er = snap.engagementRate != null
+//       ? parseFloat(String(snap.engagementRate)) * 100
+//       : undefined
+//     metrics = { views, likes, comments, er }
+//   }
 
-  return { id: raw.id, type, caption: raw.caption, postedAt: raw.postedAt, hashtags, metrics }
-}
+//   return { id: raw.id, type, caption: raw.caption, postedAt: raw.postedAt, hashtags, metrics }
+// }
 
-function normalizeAccounts(raw: Account): Account {
-  return {
-    ...raw,
-    postCount: raw.postCount ?? raw.postsCount ?? 0,
-  }
-}
+// function normalizeAccounts(raw: Account): Account {
+//   return {
+//     ...raw,
+//     postCount: raw.postCount ?? raw.postsCount ?? 0,
+//   }
+// }
 
-// ── Kalkulasi KPI dari posts ──────────────────────────────────────────────────
+// // ── Kalkulasi KPI dari posts ──────────────────────────────────────────────────
 
-function computeKPIs(posts: Post[], followersCount: number): ComputedKPI {
-  const videos   = posts.filter(p => p.type === "Video")
-  const images   = posts.filter(p => p.type === "Image")
-  const sidecars = posts.filter(p => p.type === "Sidecar")
+// function computeKPIs(posts: Post[], followersCount: number): ComputedKPI {
+//   const videos   = posts.filter(p => p.type === "Video")
+//   const images   = posts.filter(p => p.type === "Image")
+//   const sidecars = posts.filter(p => p.type === "Sidecar")
 
-  const avgViewsPerVideo = videos.length
-    ? videos.reduce((s, p) => s + (p.metrics?.views ?? 0), 0) / videos.length : 0
+//   const avgViewsPerVideo = videos.length
+//     ? videos.reduce((s, p) => s + (p.metrics?.views ?? 0), 0) / videos.length : 0
 
-  const avgLikesPerVideo = videos.length
-    ? videos.reduce((s, p) => s + (p.metrics?.likes ?? 0), 0) / videos.length : 0
+//   const avgLikesPerVideo = videos.length
+//     ? videos.reduce((s, p) => s + (p.metrics?.likes ?? 0), 0) / videos.length : 0
 
-  // ER: gunakan stored ER dari snapshot jika ada, fallback ke kalkulasi manual
-  const postsWithMetrics = posts.filter(p => p.metrics)
-  const avgErAllPosts = (() => {
-    if (!postsWithMetrics.length) return 0
-    // Cek apakah ada stored ER dari snapshot
-    const withStoredEr = postsWithMetrics.filter(p => p.metrics?.er != null)
-    if (withStoredEr.length > 0) {
-      return withStoredEr.reduce((s, p) => s + (p.metrics!.er ?? 0), 0) / withStoredEr.length
-    }
-    // Fallback: hitung manual jika punya followers
-    if (!followersCount) return 0
-    return postsWithMetrics.reduce((s, p) => {
-      const l = p.metrics!.likes    ?? 0
-      const c = p.metrics!.comments ?? 0
-      return s + ((l * 2 + c * 5) / followersCount * 100)
-    }, 0) / postsWithMetrics.length
-  })()
+//   // ER: gunakan stored ER dari snapshot jika ada, fallback ke kalkulasi manual
+//   const postsWithMetrics = posts.filter(p => p.metrics)
+//   const avgErAllPosts = (() => {
+//     if (!postsWithMetrics.length) return 0
+//     // Cek apakah ada stored ER dari snapshot
+//     const withStoredEr = postsWithMetrics.filter(p => p.metrics?.er != null)
+//     if (withStoredEr.length > 0) {
+//       return withStoredEr.reduce((s, p) => s + (p.metrics!.er ?? 0), 0) / withStoredEr.length
+//     }
+//     // Fallback: hitung manual jika punya followers
+//     if (!followersCount) return 0
+//     return postsWithMetrics.reduce((s, p) => {
+//       const l = p.metrics!.likes    ?? 0
+//       const c = p.metrics!.comments ?? 0
+//       return s + ((l * 2 + c * 5) / followersCount * 100)
+//     }, 0) / postsWithMetrics.length
+//   })()
 
-  // Posting freq/week dari span tanggal
-  let postingFreqPerWeek = 0
-  if (posts.length >= 2) {
-    const ts = posts.map(p => new Date(p.postedAt).getTime()).filter(Boolean).sort((a, b) => a - b)
-    const weeks = (ts[ts.length - 1] - ts[0]) / 604_800_000
-    postingFreqPerWeek = weeks > 0 ? posts.length / weeks : 0
-  }
+//   // Posting freq/week dari span tanggal
+//   let postingFreqPerWeek = 0
+//   if (posts.length >= 2) {
+//     const ts = posts.map(p => new Date(p.postedAt).getTime()).filter(Boolean).sort((a, b) => a - b)
+//     const weeks = (ts[ts.length - 1] - ts[0]) / 604_800_000
+//     postingFreqPerWeek = weeks > 0 ? posts.length / weeks : 0
+//   }
 
-  return {
-    followers:          followersCount,
-    totalVideos:        videos.length,
-    totalImages:        images.length,
-    totalSidecars:      sidecars.length,
-    avgViewsPerVideo:   Math.round(avgViewsPerVideo),
-    avgLikesPerVideo:   Math.round(avgLikesPerVideo),
-    avgErAllPosts:      parseFloat(avgErAllPosts.toFixed(2)),
-    postingFreqPerWeek: parseFloat(postingFreqPerWeek.toFixed(1)),
-  }
-}
+//   return {
+//     followers:          followersCount,
+//     totalVideos:        videos.length,
+//     totalImages:        images.length,
+//     totalSidecars:      sidecars.length,
+//     avgViewsPerVideo:   Math.round(avgViewsPerVideo),
+//     avgLikesPerVideo:   Math.round(avgLikesPerVideo),
+//     avgErAllPosts:      parseFloat(avgErAllPosts.toFixed(2)),
+//     postingFreqPerWeek: parseFloat(postingFreqPerWeek.toFixed(1)),
+//   }
+// }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -459,68 +457,68 @@ function KPICards({ account, kpi, loading }: {
 
 // ── Top Posts ─────────────────────────────────────────────────────────────────
 
-function TopPosts({ posts, followersCount, loading }: {
-  posts: Post[]; followersCount: number; loading: boolean
-}) {
-  const sorted = [...posts]
-    .sort((a, b) => (b.metrics?.views ?? 0) - (a.metrics?.views ?? 0))
-    .slice(0, 5)
+// function TopPosts({ posts, followersCount, loading }: {
+//   posts: Post[]; followersCount: number; loading: boolean
+// }) {
+//   const sorted = [...posts]
+//     .sort((a, b) => (b.metrics?.views ?? 0) - (a.metrics?.views ?? 0))
+//     .slice(0, 5)
 
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div><CardTitle>Top Posts</CardTitle><CardDescription>Sorted by video views</CardDescription></div>
-        <Badge variant="outline">{posts.length} posts</Badge>
-      </CardHeader>
-      <CardContent className="p-0">
-        {loading ? (
-          <div className="p-5 space-y-3">{Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-10 rounded-lg" />)}</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/40">
-                  {["#","Caption","Type","Views","Likes","Comments","ER","Date"].map(h => (
-                    <th key={h} className={`text-xs font-medium text-muted-foreground py-2.5 ${["#","Caption"].includes(h)?"text-left px-5":"text-right px-3"} ${h==="Date"?"px-5":""}`}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {!sorted.length ? (
-                  <tr><td colSpan={8} className="text-center py-10 text-xs text-muted-foreground">No posts yet — click "Fetch Post"</td></tr>
-                ) : sorted.map((post, i) => {
-                  const l = post.metrics?.likes    ?? 0
-                  const c = post.metrics?.comments ?? 0
-                  // Gunakan stored ER, fallback ke manual kalkulasi
-                  const erVal = post.metrics?.er != null
-                    ? post.metrics.er
-                    : (followersCount > 0 ? (l*2+c*5)/followersCount*100 : null)
-                  const er = erVal != null ? `${erVal.toFixed(2)}%` : "—"
-                  return (
-                    <tr key={post.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                      <td className="px-5 py-2.5 text-xs text-muted-foreground font-mono">{i + 1}</td>
-                      <td className="px-3 py-2.5 max-w-[160px]"><p className="truncate text-xs">{post.caption || "—"}</p></td>
-                      <td className="px-3 py-2.5 text-right">
-                        <Badge variant={post.type==="Video"?"default":post.type==="Image"?"secondary":"outline"} className="text-[10px]">
-                          {post.type}
-                        </Badge>
-                      </td>
-                      <td className="px-3 py-2.5 text-right text-xs font-medium">{fmt.num(post.metrics?.views)}</td>
-                      <td className="px-3 py-2.5 text-right text-xs text-rose-500">{fmt.num(l)}</td>
-                      <td className="px-3 py-2.5 text-right text-xs text-sky-500">{fmt.num(c)}</td>
-                      <td className="px-3 py-2.5 text-right text-xs font-medium text-emerald-600">{er}</td>
-                      <td className="px-5 py-2.5 text-right text-xs text-muted-foreground">{fmt.dateShort(post.postedAt)}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
+//   return (
+//     <Card>
+//       <CardHeader className="flex flex-row items-center justify-between">
+//         <div><CardTitle>Top Posts</CardTitle><CardDescription>Sorted by video views</CardDescription></div>
+//         <Badge variant="outline">{posts.length} posts</Badge>
+//       </CardHeader>
+//       <CardContent className="p-0">
+//         {loading ? (
+//           <div className="p-5 space-y-3">{Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-10 rounded-lg" />)}</div>
+//         ) : (
+//           <div className="overflow-x-auto">
+//             <table className="w-full text-sm">
+//               <thead>
+//                 <tr className="border-b bg-muted/40">
+//                   {["#","Caption","Type","Views","Likes","Comments","ER","Date"].map(h => (
+//                     <th key={h} className={`text-xs font-medium text-muted-foreground py-2.5 ${["#","Caption"].includes(h)?"text-left px-5":"text-right px-3"} ${h==="Date"?"px-5":""}`}>{h}</th>
+//                   ))}
+//                 </tr>
+//               </thead>
+//               <tbody>
+//                 {!sorted.length ? (
+//                   <tr><td colSpan={8} className="text-center py-10 text-xs text-muted-foreground">No posts yet — click "Fetch Post"</td></tr>
+//                 ) : sorted.map((post, i) => {
+//                   const l = post.metrics?.likes    ?? 0
+//                   const c = post.metrics?.comments ?? 0
+//                   // Gunakan stored ER, fallback ke manual kalkulasi
+//                   const erVal = post.metrics?.er != null
+//                     ? post.metrics.er
+//                     : (followersCount > 0 ? (l*2+c*5)/followersCount*100 : null)
+//                   const er = erVal != null ? `${erVal.toFixed(2)}%` : "—"
+//                   return (
+//                     <tr key={post.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+//                       <td className="px-5 py-2.5 text-xs text-muted-foreground font-mono">{i + 1}</td>
+//                       <td className="px-3 py-2.5 max-w-[160px]"><p className="truncate text-xs">{post.caption || "—"}</p></td>
+//                       <td className="px-3 py-2.5 text-right">
+//                         <Badge variant={post.type==="Video"?"default":post.type==="Image"?"secondary":"outline"} className="text-[10px]">
+//                           {post.type}
+//                         </Badge>
+//                       </td>
+//                       <td className="px-3 py-2.5 text-right text-xs font-medium">{fmt.num(post.metrics?.views)}</td>
+//                       <td className="px-3 py-2.5 text-right text-xs text-rose-500">{fmt.num(l)}</td>
+//                       <td className="px-3 py-2.5 text-right text-xs text-sky-500">{fmt.num(c)}</td>
+//                       <td className="px-3 py-2.5 text-right text-xs font-medium text-emerald-600">{er}</td>
+//                       <td className="px-5 py-2.5 text-right text-xs text-muted-foreground">{fmt.dateShort(post.postedAt)}</td>
+//                     </tr>
+//                   )
+//                 })}
+//               </tbody>
+//             </table>
+//           </div>
+//         )}
+//       </CardContent>
+//     </Card>
+//   )
+// }
 
 // ── Content Distribution ──────────────────────────────────────────────────────
 
@@ -578,27 +576,27 @@ const METRIC_CONFIG: Record<MetricKey, { label: string; color: string; axis: "l"
   er:       { label: "ER (%)",   color: "#f59e0b", axis: "r", dash: "4 2" },
 }
 
-function EngagementChart({ posts, followersCount, loading }: {
-  posts: Post[]; followersCount: number; loading: boolean
-}) {
-  const [activeMetrics, setActiveMetrics] = useState<Set<MetricKey>>(
-    new Set(["views", "likes", "comments", "er"])
-  )
-  const [range, setRange] = useState<10 | 20 | 50>(20)
+// function EngagementChart({ posts, followersCount, loading }: {
+//   posts: Post[]; followersCount: number; loading: boolean
+// }) {
+//   const [activeMetrics, setActiveMetrics] = useState<Set<MetricKey>>(
+//     new Set(["views", "likes", "comments", "er"])
+//   )
+//   const [range, setRange] = useState<10 | 20 | 50>(20)
 
-  const toggleMetric = (key: MetricKey) => {
-    setActiveMetrics(prev => {
-      const next = new Set(prev)
-      if (next.has(key)) {
-        // Jangan hapus kalau hanya tersisa 1
-        if (next.size === 1) return prev
-        next.delete(key)
-      } else {
-        next.add(key)
-      }
-      return next
-    })
-  }
+//   const toggleMetric = (key: MetricKey) => {
+//     setActiveMetrics(prev => {
+//       const next = new Set(prev)
+//       if (next.has(key)) {
+//         // Jangan hapus kalau hanya tersisa 1
+//         if (next.size === 1) return prev
+//         next.delete(key)
+//       } else {
+//         next.add(key)
+//       }
+//       return next
+//     })
+//   }
 
   const data = [...posts]
     .filter(p => p.postedAt && p.metrics)
@@ -772,77 +770,77 @@ function CompetitorTables({ competitors, loading }: { competitors: Account[]; lo
 
 // ── Competitor Chart ──────────────────────────────────────────────────────────
 
-function CompetitorChart({ accounts, loading }: { accounts: Account[]; loading: boolean }) {
-  const data = accounts.map(acc => ({
-    name: `@${acc.username}`,
-    followers: acc.followersCount || 0,
-    isMain: acc.accountType === "main",
-  }))
-  return (
-    <Card>
-      <CardHeader><CardTitle>Follower Comparison</CardTitle><CardDescription>All tracked accounts</CardDescription></CardHeader>
-      <CardContent>
-        {loading ? <Skeleton className="h-52 rounded-lg" /> : !data.length ? (
-          <div className="h-52 flex items-center justify-center text-xs text-muted-foreground">No data</div>
-        ) : (
-          <ResponsiveContainer width="100%" height={210}>
-            <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
-              <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={v => fmt.num(v)} />
-              <Tooltip formatter={(v: number) => fmt.num(v)} contentStyle={{ borderRadius: 8, fontSize: 12 }} />
-              <Bar dataKey="followers" name="Followers" radius={[4, 4, 0, 0]}>
-                {data.map((d, i) => <Cell key={i} fill={d.isMain ? "#6366f1" : COLORS[(i + 1) % COLORS.length]} />)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
+// function CompetitorChart({ accounts, loading }: { accounts: Account[]; loading: boolean }) {
+//   const data = accounts.map(acc => ({
+//     name: `@${acc.username}`,
+//     followers: acc.followersCount || 0,
+//     isMain: acc.accountType === "main",
+//   }))
+//   return (
+//     <Card>
+//       <CardHeader><CardTitle>Follower Comparison</CardTitle><CardDescription>All tracked accounts</CardDescription></CardHeader>
+//       <CardContent>
+//         {loading ? <Skeleton className="h-52 rounded-lg" /> : !data.length ? (
+//           <div className="h-52 flex items-center justify-center text-xs text-muted-foreground">No data</div>
+//         ) : (
+//           <ResponsiveContainer width="100%" height={210}>
+//             <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+//               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+//               <XAxis dataKey="name" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
+//               <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={v => fmt.num(v)} />
+//               <Tooltip formatter={(v: number) => fmt.num(v)} contentStyle={{ borderRadius: 8, fontSize: 12 }} />
+//               <Bar dataKey="followers" name="Followers" radius={[4, 4, 0, 0]}>
+//                 {data.map((d, i) => <Cell key={i} fill={d.isMain ? "#6366f1" : COLORS[(i + 1) % COLORS.length]} />)}
+//               </Bar>
+//             </BarChart>
+//           </ResponsiveContainer>
+//         )}
+//       </CardContent>
+//     </Card>
+//   )
+// }
 
-// ── Hashtag Table ─────────────────────────────────────────────────────────────
+// // ── Hashtag Table ─────────────────────────────────────────────────────────────
 
-function HashtagTable({ posts, loading }: { posts: Post[]; loading: boolean }) {
-  const map: Record<string, { tag: string; count: number; totalViews: number }> = {}
-  posts.forEach(p => p.hashtags?.forEach(tag => {
-    if (!map[tag]) map[tag] = { tag, count: 0, totalViews: 0 }
-    map[tag].count++
-    map[tag].totalViews += p.metrics?.views ?? 0
-  }))
-  const tags = Object.values(map).sort((a, b) => b.count - a.count).slice(0, 15)
+// function HashtagTable({ posts, loading }: { posts: Post[]; loading: boolean }) {
+//   const map: Record<string, { tag: string; count: number; totalViews: number }> = {}
+//   posts.forEach(p => p.hashtags?.forEach(tag => {
+//     if (!map[tag]) map[tag] = { tag, count: 0, totalViews: 0 }
+//     map[tag].count++
+//     map[tag].totalViews += p.metrics?.views ?? 0
+//   }))
+//   const tags = Object.values(map).sort((a, b) => b.count - a.count).slice(0, 15)
 
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div><CardTitle>Top Hashtags</CardTitle><CardDescription>Most used across your posts</CardDescription></div>
-        <Badge variant="outline">{tags.length} tags</Badge>
-      </CardHeader>
-      <CardContent className="p-0">
-        {loading ? (
-          <div className="p-5 grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {Array(9).fill(0).map((_, i) => <Skeleton key={i} className="h-16 rounded-lg" />)}
-          </div>
-        ) : !tags.length ? (
-          <div className="py-10 text-center text-xs text-muted-foreground">No hashtag data yet</div>
-        ) : (
-          <div className="p-5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-            {tags.map(t => (
-              <div key={t.tag} className="rounded-lg border bg-muted/30 p-3 hover:bg-muted/60 transition-colors">
-                <div className="flex items-start justify-between gap-1">
-                  <span className="text-xs font-medium truncate text-primary">#{t.tag}</span>
-                  <Badge variant="secondary" className="shrink-0 text-[10px]">{t.count}×</Badge>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">{fmt.num(t.totalViews)} views</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
+//   return (
+//     <Card>
+//       <CardHeader className="flex flex-row items-center justify-between">
+//         <div><CardTitle>Top Hashtags</CardTitle><CardDescription>Most used across your posts</CardDescription></div>
+//         <Badge variant="outline">{tags.length} tags</Badge>
+//       </CardHeader>
+//       <CardContent className="p-0">
+//         {loading ? (
+//           <div className="p-5 grid grid-cols-2 sm:grid-cols-3 gap-2">
+//             {Array(9).fill(0).map((_, i) => <Skeleton key={i} className="h-16 rounded-lg" />)}
+//           </div>
+//         ) : !tags.length ? (
+//           <div className="py-10 text-center text-xs text-muted-foreground">No hashtag data yet</div>
+//         ) : (
+//           <div className="p-5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+//             {tags.map(t => (
+//               <div key={t.tag} className="rounded-lg border bg-muted/30 p-3 hover:bg-muted/60 transition-colors">
+//                 <div className="flex items-start justify-between gap-1">
+//                   <span className="text-xs font-medium truncate text-primary">#{t.tag}</span>
+//                   <Badge variant="secondary" className="shrink-0 text-[10px]">{t.count}×</Badge>
+//                 </div>
+//                 <p className="text-xs text-muted-foreground mt-1">{fmt.num(t.totalViews)} views</p>
+//               </div>
+//             ))}
+//           </div>
+//         )}
+//       </CardContent>
+//     </Card>
+//   )
+// }
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // DAILY AI ANALYSIS — 3 tabs dari resultJson Gemini
@@ -1557,7 +1555,7 @@ export default function InstagramDashboardContent() {
   const [competitorPosts] = useState<Record<string, Post[]>>({})
 
   const selectedAccount = allAccounts.find(a => a.id === selectedId)
-  const mainAccounts    = allAccounts.filter(a => a.accountType === "main")
+  // const mainAccounts    = allAccounts.filter(a => a.accountType === "main")
   const competitors     = allAccounts.filter(a => a.accountType === "competitor")
   // Build CompetitorMetrics for section 2
   const competitorMetrics: CompetitorMetrics[] = competitors.map(acc => (
@@ -1623,19 +1621,19 @@ export default function InstagramDashboardContent() {
   }, [])
 
   // ── Load competitor posts (lightweight, for metrics only) ─────────────────
-  const loadCompetitorPosts = useCallback(async (accounts: Account[]) => {
-    const comps = accounts.filter(a => a.accountType === "competitor")
-    const results = await Promise.allSettled(
-      comps.map(acc => api.getAccountPosts(acc.id, 50).then(r => ({ id: acc.id, data: r })))
-    )
-    const map: Record<string, Post[]> = {}
-    results.forEach(r => {
-      if (r.status === "fulfilled" && r.value.data.success) {
-        map[r.value.id] = (r.value.data.posts ?? []).map(normalizePost)
-      }
-    })
-    setCompetitorPosts(map)
-  }, [])
+  // const loadCompetitorPosts = useCallback(async (accounts: Account[]) => {
+  //   const comps = accounts.filter(a => a.accountType === "competitor")
+  //   const results = await Promise.allSettled(
+  //     comps.map(acc => api.getAccountPosts(acc.id, 50).then(r => ({ id: acc.id, data: r })))
+  //   )
+  //   const map: Record<string, Post[]> = {}
+  //   results.forEach(r => {
+  //     if (r.status === "fulfilled" && r.value.data.success) {
+  //       map[r.value.id] = (r.value.data.posts ?? []).map(normalizePost)
+  //     }
+  //   })
+  //   setCompetitorPosts(map)
+  // }, [])
 
   const loadAll = useCallback(async () => {
     setLoadingAccounts(true)
@@ -1654,20 +1652,20 @@ export default function InstagramDashboardContent() {
   useEffect(() => { loadAll() }, [])
   useEffect(() => { if (selectedId) loadAccountData(selectedId) }, [selectedId])
 
-  const handleFetchPost = async () => {
-    if (fetchingJob) return; setFetchingJob(true)
-    try {
-      const r = await api.startScrape()
-      if (r.success && r.jobId) { setActiveJob({ id: r.jobId, status: "running" }); pollJob(r.jobId) }
-    } catch (e) { console.error(e) } finally { setFetchingJob(false) }
-  }
-  const handleAIAnalyze = async () => {
-    if (analyzingJob) return; setAnalyzingJob(true)
-    try {
-      const r = await api.startAiAnalysis()
-      if (r.success && r.jobId) { setActiveJob({ id: r.jobId, status: "running" }); pollJob(r.jobId) }
-    } catch (e) { console.error(e) } finally { setAnalyzingJob(false) }
-  }
+  // const handleFetchPost = async () => {
+  //   if (fetchingJob) return; setFetchingJob(true)
+  //   try {
+  //     const r = await api.startScrape()
+  //     if (r.success && r.jobId) { setActiveJob({ id: r.jobId, status: "running" }); pollJob(r.jobId) }
+  //   } catch (e) { console.error(e) } finally { setFetchingJob(false) }
+  // }
+  // const handleAIAnalyze = async () => {
+  //   if (analyzingJob) return; setAnalyzingJob(true)
+  //   try {
+  //     const r = await api.startAiAnalysis()
+  //     if (r.success && r.jobId) { setActiveJob({ id: r.jobId, status: "running" }); pollJob(r.jobId) }
+  //   } catch (e) { console.error(e) } finally { setAnalyzingJob(false) }
+  // }
 
   const lastUpdated = selectedAccount?.followerHistory?.[0]?.recordedAt
     ? new Date(selectedAccount.followerHistory[0].recordedAt).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })

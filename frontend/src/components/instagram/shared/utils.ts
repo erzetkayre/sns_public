@@ -2,7 +2,7 @@
 // utils.ts — Shared utilities for Instagram Dashboard
 // ─────────────────────────────────────────────────────────────────────────────
 
-import type { Account, Post, RawPost, RawMetricSnapshot, ComputedKPI, CompetitorMetrics } from "./types"
+import type { Account, Post, RawPost, ComputedKPI, CompetitorMetrics } from "./types"
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 

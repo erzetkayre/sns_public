@@ -5,15 +5,14 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  PieChart, Pie, Cell, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts"
-import { ExternalLink, TrendingUp, Heart, MessageCircle, Eye, Play, Image, Layers } from "lucide-react"
+import { ExternalLink, TrendingUp, Heart, Eye, Play, Image, Layers } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { fmt, getPostER, getInstagramUrl, CHART_COLORS } from "@/components/instagram/shared/utils"
-import type { Post, Account, CompetitorMetrics } from "@/components/instagram/shared/types"
+import { fmt, getPostER, getInstagramUrl,  } from "@/components/instagram/shared/utils"
+import type { Post, Account } from "@/components/instagram/shared/types"
 
 // ── Top Posts Table (past 15 days, all accounts) ──────────────────────────────
 

@@ -6,10 +6,9 @@
 
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  RadarChart, Radar, PolarGrid, PolarAngleAxis,
   ResponsiveContainer, Cell,
 } from "recharts"
-import { MapPin, Hash, TrendingUp } from "lucide-react"
+import { MapPin, Hash } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"

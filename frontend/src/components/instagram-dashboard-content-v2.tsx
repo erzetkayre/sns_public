@@ -63,7 +63,7 @@ export default function InstagramDashboardV2() {
   const [analyzingJob,    setAnalyzingJob]    = useState(false)
 
   const selectedAccount = allAccounts.find(a => a.id === selectedId)
-  const mainAccounts    = allAccounts.filter(a => a.accountType === "main")
+  // const mainAccounts    = allAccounts.filter(a => a.accountType === "main")
   const competitors     = allAccounts.filter(a => a.accountType === "competitor")
 
   // Build CompetitorMetrics for section 2
